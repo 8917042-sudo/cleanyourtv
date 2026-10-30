@@ -16,6 +16,18 @@ final class SystemSettings {
 
     static Intent intent(Context context, String action) {
         PackageManager pm = context.getPackageManager();
+
+        // X96: the main Settings button opens the TV settings (side menu, works with the remote)
+        // when that app is installed. The generic Android settings are laid out for touch screens.
+        if (Settings.ACTION_SETTINGS.equals(action)) {
+            try {
+                pm.getPackageInfo(AOSP_TV_SETTINGS.getPackageName(), 0);
+                return new Intent().setComponent(AOSP_TV_SETTINGS);
+            } catch (PackageManager.NameNotFoundException ignored) {
+                // TV settings not installed or not visible: fall through to the standard behaviour.
+            }
+        }
+
         Intent standard = new Intent(action);
         ResolveInfo resolved = pm.resolveActivity(standard, PackageManager.MATCH_DEFAULT_ONLY);
         // Fire OS resolves the standard actions to a CTS compliance stub that opens nothing;
@@ -56,11 +68,5 @@ final class SystemSettings {
             return new Intent().setComponent(component);
         }
         return null;
-    }
-
-    /** The TV's App info page for pkg, or null where the firmware has none (CVTE's settings app, #1202). */
-    static Intent appInfo(Context context, String pkg) {
-        Intent info = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + pkg));
-        return context.getPackageManager().resolveActivity(info, PackageManager.MATCH_DEFAULT_ONLY) != null ? info : null;
     }
 }
