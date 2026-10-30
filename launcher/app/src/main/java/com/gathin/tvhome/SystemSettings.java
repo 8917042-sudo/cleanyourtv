@@ -69,4 +69,21 @@ final class SystemSettings {
         }
         return null;
     }
+    /** The App info screen for a package (used by the tile menu and the App library). */
+    static Intent appInfo(Context context, String pkg) {
+        Intent info = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", pkg, null));
+        PackageManager pm = context.getPackageManager();
+        ResolveInfo resolved = pm.resolveActivity(info, PackageManager.MATCH_DEFAULT_ONLY);
+        if (resolved != null) return info;
+        // Nothing answers the standard App info action: open the vendor or TV settings instead.
+        Intent fallback = vendorIntent(context);
+        if (fallback != null) return fallback;
+        try {
+            pm.getPackageInfo(AOSP_TV_SETTINGS.getPackageName(), 0);
+            return new Intent().setComponent(AOSP_TV_SETTINGS);
+        } catch (PackageManager.NameNotFoundException e) {
+            return info;
+        }
+    }
 }
